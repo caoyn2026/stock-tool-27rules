@@ -9,8 +9,11 @@ import akshare as ak
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import time, warnings
+import time, warnings, socket
 warnings.filterwarnings('ignore')
+
+# 设置全局socket超时，防止akshare请求卡死
+socket.setdefaulttimeout(30)
 
 # ============ 数据获取模块 ============
 class StockDataFetcher:
@@ -60,7 +63,7 @@ class StockDataFetcher:
             pass
         
         # 方案2: 东方财富源（重试3次）
-        for attempt in range(3):
+        for attempt in range(2):
             try:
                 df = ak.stock_zh_a_hist(
                     symbol=self.raw_code, period="daily",
@@ -74,7 +77,7 @@ class StockDataFetcher:
                     return
             except:
                 if attempt < 2:
-                    time.sleep(2)
+                    time.sleep(1)
         
         # 方案3: 尝试更短时间范围
         try:
