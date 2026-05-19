@@ -208,6 +208,7 @@ class AutoScorer:
         self._score_risk_reward()
         self._score_confidence()
         self._calc_position()
+        self._add_market_data()
         return self.result
     
     # ─── 第1维：逻辑清晰度（原则2,3,4,27）───
@@ -552,6 +553,54 @@ class AutoScorer:
         self.result['buySuggest'] = f"分批买入：{self.recent_low20:.2f}~{self.cur:.2f}"
         self.result['stopLoss'] = f"止损位：{stop_price:.2f}（跌破低点-3%）"
         self.result['targetPrice'] = f"目标位：{self.recent_high60:.2f}（近期高点）"
+
+    # ─── 盘口数据与K线 ───
+    def _add_market_data(self):
+        """添加实时盘口数据供前端展示"""
+        if self.k is None or len(self.k) < 2:
+            self.result['market'] = {}
+            self.result['kline'] = []
+            return
+        
+        last = self.k.iloc[-1]
+        prev = self.k.iloc[-2]
+        last_close = self.cur
+        prev_close = float(prev['收盘']) if not isinstance(prev['收盘'], pd.Series) else float(self._to_float(prev['收盘']))
+        change_pct = (last_close - prev_close) / prev_close * 100 if prev_close > 0 else 0
+        
+        self.result['market'] = {
+            'price': round(last_close, 2),
+            'change': round(last_close - prev_close, 2),
+            'changePct': round(change_pct, 2),
+            'open': round(float(last.get('开盘', 0)), 2),
+            'high': round(float(last.get('最高', 0)), 2),
+            'low': round(float(last.get('最低', 0)), 2),
+            'volume': int(float(last.get('成交量', 0))),
+            'amount': float(last.get('成交额', 0)),
+            'turnover': round(float(last.get('换手率', 0)), 2) if last.get('换手率', 0) else 0,
+            'ma5': round(self.ma5, 2),
+            'ma10': round(self.ma10, 2),
+            'ma20': round(self.ma20, 2),
+            'ma60': round(self.ma60, 2),
+        }
+        
+        # K线数据（最近60天，供前端图表）
+        kline_data = []
+        n = min(60, len(self.k))
+        for i in range(-n, 0):
+            row = self.k.iloc[i]
+            kline_data.append({
+                'date': str(row.get('日期', '')),
+                'open': round(float(row.get('开盘', 0)), 2),
+                'high': round(float(row.get('最高', 0)), 2),
+                'low': round(float(row.get('最低', 0)), 2),
+                'close': round(float(row.get('收盘', 0)), 2),
+                'volume': int(float(row.get('成交量', 0))),
+            })
+        self.result['kline'] = kline_data
+        
+        # 更新basic中的涨跌幅
+        self.result['basic']['涨跌幅'] = round(change_pct, 2)
 
 
 # ============ 命令行测试 ============
