@@ -208,7 +208,11 @@ class AutoScorer:
         self._score_risk_reward()
         self._score_confidence()
         self._calc_position()
-        self._add_market_data()
+        try:
+            self._add_market_data()
+        except Exception as e:
+            self.result['market'] = {'error': str(e)}
+            self.result['kline'] = []
         return self.result
     
     # ─── 第1维：逻辑清晰度（原则2,3,4,27）───
