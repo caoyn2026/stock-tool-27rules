@@ -625,3 +625,4 @@ if __name__ == '__main__':
                 print(f"  {d}")
             checks = result['checks'][dim]
             print("  判定：" + "  ".join(f"{'✅' if v else '❌'}{k}" for k,v in checks.items()))
+# build: force rebuild 1779172892
