@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>27条铁律·选股决策系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--card:#161b22;--card2:#1c2333;--border:#30363d;--accent:#e94560;--green:#00d9a5;--yellow:#f0b429;--blue:#58a6ff;--text:#e6edf3;--dim:#8b949e}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);padding:15px;line-height:1.6}
+.container{max-width:1100px;margin:0 auto}
+
+header{text-align:center;padding:30px 0 20px;border-bottom:2px solid var(--accent);margin-bottom:25px}
+header h1{font-size:1.9rem}
+header h1 span{color:var(--accent)}
+header .sub{color:var(--dim);font-size:.85rem;margin-top:6px}
+header .sub b{color:var(--yellow)}
+
+/* Search */
+.search-wrap{max-width:600px;margin:0 auto 10px;position:relative}
+.search{display:flex;gap:10px}
+.search input{flex:1;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:1.05rem}
+.search input:focus{outline:none;border-color:var(--accent)}
+.search input::placeholder{color:var(--dim)}
+.search button{padding:14px 28px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;transition:all .3s;white-space:nowrap}
+.search button:hover{background:#ff6b6b;transform:translateY(-1px)}
+.search button:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.search-hint{text-align:center;font-size:.78rem;color:var(--dim);margin-top:8px}
+
+/* Dropdown */
+.dropdown{position:absolute;top:54px;left:0;right:92px;background:var(--card);border:1px solid var(--border);border-radius:10px;max-height:280px;overflow-y:auto;display:none;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.dropdown.show{display:block}
+.dd-item{padding:10px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.9rem;border-bottom:1px solid var(--border)}
+.dd-item:last-child{border-bottom:none}
+.dd-item:hover{background:rgba(233,69,96,.1)}
+.dd-item .dd-name{font-weight:600}
+.dd-item .dd-code{color:var(--dim);font-size:.8rem}
+.dd-item .dd-py{color:var(--yellow);font-size:.72rem;margin-left:6px}
+
+.hot-codes{display:flex;gap:8px;justify-content:center;margin-bottom:20px;flex-wrap:wrap}
+.hot-codes span{padding:6px 14px;background:var(--card);border:1px solid var(--border);border-radius:20px;font-size:.8rem;cursor:pointer;transition:all .2s;color:var(--dim)}
+.hot-codes span:hover{border-color:var(--accent);color:var(--text)}
+
+.loading{text-align:center;padding:60px;display:none}
+.spinner{display:inline-block;width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{margin-top:14px;color:var(--dim)}
+
+.error{text-align:center;padding:30px;color:var(--accent);display:none}
+
+.result{display:none;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+
+.stock-hd{display:flex;justify-content:space-between;align-items:center;padding:22px;background:var(--card);border-radius:14px;border:1px solid var(--border);margin-bottom:22px;flex-wrap:wrap;gap:12px}
+.stock-hd .left .name{font-size:1.5rem;font-weight:700}
+.stock-hd .left .meta{font-size:.85rem;color:var(--dim);margin-top:4px}
+.stock-hd .right{text-align:right}
+.stock-hd .right .total{font-size:2.4rem;font-weight:800;line-height:1}
+.stock-hd .right .total.high{color:var(--green)}
+.stock-hd .right .total.mid{color:var(--yellow)}
+.stock-hd .right .total.low{color:var(--accent)}
+.stock-hd .right .label{font-size:.8rem;color:var(--dim)}
+
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+@media(max-width:700px){.summary{grid-template-columns:repeat(2,1fr)}}
+.sum-card{text-align:center;padding:16px 10px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+.sum-card .val{font-size:1.1rem;font-weight:700}
+.sum-card .val.green{color:var(--green)}
+.sum-card .val.yellow{color:var(--yellow)}
+.sum-card .val.red{color:var(--accent)}
+.sum-card .lbl{font-size:.78rem;color:var(--dim);margin-top:4px}
+
+.pos-wrap{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:20px;margin-bottom:22px}
+.pos-wrap h3{font-size:1rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.pos-bar{height:40px;background:var(--bg);border-radius:20px;overflow:hidden;margin-bottom:14px}
+.pos-fill{height:100%;border-radius:20px;transition:width .8s ease;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:.95rem}
+.pos-detail{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.88rem}
+.pos-detail .row{display:flex;justify-content:space-between;padding:6px 12px;background:var(--bg);border-radius:6px}
+.pos-detail .row .k{color:var(--dim)}
+.pos-detail .row .v{font-weight:600}
+
+.dim-card{background:var(--card);border-radius:14px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden;transition:border-color .2s}
+.dim-card:hover{border-color:#444}
+.dim-hd{padding:16px 20px;cursor:pointer;display:flex;align-items:center;gap:12px;user-select:none}
+.dim-hd:hover{background:rgba(255,255,255,.02)}
+.dim-hd .icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.dim-hd .icon.high{background:rgba(0,217,165,.15);color:var(--green)}
+.dim-hd .icon.mid{background:rgba(240,180,41,.15);color:var(--yellow)}
+.dim-hd .icon.low{background:rgba(233,69,96,.15);color:var(--accent)}
+.dim-hd .info{flex:1;min-width:0}
+.dim-hd .info .title{font-weight:600;font-size:.95rem}
+.dim-hd .info .principle{font-size:.72rem;color:var(--dim);margin-top:2px}
+.dim-hd .score{font-size:1.5rem;font-weight:700;min-width:45px;text-align:right}
+.dim-hd .score.high{color:var(--green)}
+.dim-hd .score.mid{color:var(--yellow)}
+.dim-hd .score.low{color:var(--accent)}
+.dim-hd .arrow{color:var(--dim);transition:transform .3s;font-size:.8rem}
+.dim-bd{padding:0 20px 16px;display:none}
+.dim-bd.show{display:block;animation:fadeUp .25s ease}
+.check-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+@media(max-width:500px){.check-grid{grid-template-columns:1fr}}
+.check-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;font-size:.88rem}
+.check-item.pass{border-left:3px solid var(--green)}
+.check-item.fail{border-left:3px solid var(--accent)}
+.check-item .ci-icon{font-size:1rem}
+.check-item .ci-text{flex:1}
+.detail-list{margin-top:8px}
+.detail-item{font-size:.83rem;color:var(--dim);padding:3px 0 3px 20px}
+.detail-item::before{content:'›';margin-right:6px}
+
+.alert{padding:16px 20px;border-radius:12px;margin:16px 0;font-size:.9rem;line-height:1.7}
+.alert b{font-size:1rem}
+.alert-good{background:rgba(0,217,165,.1);border:1px solid rgba(0,217,165,.3)}
+.alert-warn{background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3)}
+.alert-bad{background:rgba(233,69,96,.1);border:1px solid rgba(233,69,96,.3)}
+
+.principles{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:20px;margin-top:20px}
+.principles h3{font-size:1rem;margin-bottom:14px}
+.p-list{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:.78rem;color:var(--dim)}
+@media(max-width:500px){.p-list{grid-template-columns:1fr}}
+.p-list div{padding:4px 8px}
+.p-list div b{color:var(--accent);margin-right:4px}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>🎯 <span>27条铁律</span> · 选股决策系统</h1>
+  <p class="sub">自动获取数据 · 自动评估 · <b>概率+仓位=风控</b></p>
+</header>
+
+<div class="hot-codes">
+  <span onclick="quick('GZMT')">GZMT 茅台</span>
+  <span onclick="quick('WLYY')">WLYY 五粮液</span>
+  <span onclick="quick('ZGPA')">ZGPA 平安</span>
+  <span onclick="quick('NDSD')">NDSD 宁德</span>
+  <span onclick="quick('BYD')">BYD 比亚迪</span>
+  <span onclick="quick('ZSYH')">ZSYH 招行</span>
+</div>
+
+<div class="search-wrap">
+  <div class="search">
+    <input type="text" id="codeInput" placeholder="输入代码/拼音缩写/名称（如 600519 / GZMT / 茅台）" autocomplete="off" autofocus>
+    <button id="btnGo" onclick="analyze()">🔍 分析</button>
+  </div>
+  <div class="dropdown" id="dropdown"></div>
+  <div class="search-hint">💡 输入拼音缩写快速选股：YYWL=用友网络 GZMT=贵州茅台 NDSD=宁德时代</div>
+</div>
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <p>正在获取实时数据并自动评估7大维度...</p>
+</div>
+<div class="error" id="error"></div>
+<div class="result" id="result"></div>
+
+<div class="principles">
+  <h3>📜 27条铁律速览</h3>
+  <div class="p-list">
+    <div><b>2</b>逻辑正确虽败犹荣</div><div><b>3</b>不做无逻辑交易</div>
+    <div><b>4</b>逻辑+资料正确=结论正确</div><div><b>5</b>耐得住寂寞</div>
+    <div><b>6</b>舍弃不属于自己的机会</div><div><b>7</b>除证据外六亲不认</div>
+    <div><b>8</b>弱水三千只取一瓢</div><div><b>9</b>走势背离即卖出</div>
+    <div><b>10</b>多大把握多大仓位</div><div><b>11</b>常胜秘诀=少战</div>
+    <div><b>12</b>胜兵先胜后求战</div><div><b>14</b>8分以下不买</div>
+    <div><b>15</b>概率+仓位=职业</div><div><b>16</b>对正确逻辑愚忠</div>
+    <div><b>18</b>做该做的不是想做的</div><div><b>19</b>按计划进按纪律出</div>
+    <div><b>23</b>冒险是魂确定是命</div><div><b>25</b>四大心魔:盲目随意急躁恐惧</div>
+    <div><b>26</b>重仓击中=利润+信仰</div><div><b>27</b>逻辑正确结果必面对</div>
+  </div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const DIM={logic:{name:'逻辑清晰度',icon:'🧠',p:'原则2,3,4,27'},timing:{name:'时机成熟度',icon:'⏰',p:'原则5,6,11,12'},evidence:{name:'证据充分性',icon:'📋',p:'原则7,8'},certainty:{name:'确定性程度',icon:'🎯',p:'原则23,24'},discipline:{name:'纪律执行力',icon:'🛡️',p:'原则18,19'},riskReward:{name:'风险回报比',icon:'💰',p:'原则10,14,15'},confidence:{name:'战意与信心',icon:'🔥',p:'原则1,16,26'}};
+
+let searchTimer=null;
+
+// 输入时实时搜索
+$('codeInput').addEventListener('input',function(){
+  clearTimeout(searchTimer);
+  const val=this.value.trim();
+  if(!val||val.length<1){$('dropdown').classList.remove('show');return;}
+  // 纯6位数字不搜下拉
+  if(/^\d{6}$/.test(val)){$('dropdown').classList.remove('show');return;}
+  searchTimer=setTimeout(()=>doSearch(val),200);
+});
+
+$('codeInput').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    e.preventDefault();
+    $('dropdown').classList.remove('show');
+    analyze();
+  }
+  if(e.key==='Escape'){$('dropdown').classList.remove('show');}
+});
+
+// 点击外部关闭下拉
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.search-wrap')){$('dropdown').classList.remove('show');}
+});
+
+function doSearch(q){
+  fetch('/api/search?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{
+    const dd=$('dropdown');
+    if(!d.results||d.results.length===0){dd.classList.remove('show');return;}
+    let h='';
+    d.results.forEach(s=>{
+      h+=`<div class="dd-item" onclick="pickStock('${s.c}','${s.n}')">
+        <div><span class="dd-name">${s.n}</span><span class="dd-py">${s.p}</span></div>
+        <span class="dd-code">${s.c}</span></div>`;
+    });
+    dd.innerHTML=h;
+    dd.classList.add('show');
+  }).catch(()=>{$('dropdown').classList.remove('show');});
+}
+
+function pickStock(code,name){
+  $('codeInput').value=code;
+  $('dropdown').classList.remove('show');
+  analyze();
+}
+
+function quick(q){$('codeInput').value=q;analyze();}
+function sc(s){return s>=7?'high':s>=5?'mid':'low'}
+
+function analyze(){
+  const raw=$('codeInput').value.trim();
+  if(!raw){alert('请输入股票代码、拼音缩写或名称');return;}
+  $('loading').style.display='block';$('error').style.display='none';$('result').style.display='none';
+  $('btnGo').disabled=true;
+  fetch('/api/analyze?code='+encodeURIComponent(raw)).then(r=>r.json()).then(d=>{
+    $('loading').style.display='none';$('btnGo').disabled=false;
+    if(d.error){
+      $('error').innerHTML=d.error;$('error').style.display='block';return;
+    }
+    render(d);
+  }).catch(e=>{
+    $('loading').style.display='none';$('btnGo').disabled=false;
+    $('error').textContent='请求失败: '+e.message;$('error').style.display='block';
+  });
+}
+
+function render(d){
+  let h='';
+  const ts=d.totalScore;
+  h+=`<div class="stock-hd">
+    <div class="left"><div class="name">${d.basic.股票名称||'-'} (${d.basic.股票代码||'-'})</div>
+    <div class="meta">${d.basic.行业||'-'} | 市值${d.basic.总市值亿||'-'}亿 | 数据源: ${d.dataSource||'?'}</div></div>
+    <div class="right"><div class="total ${sc(ts)}">${ts}</div><div class="label">综合评分/10</div></div>
+  </div>`;
+
+  const posNum=parseInt(d.position)||0;
+  const posClass=posNum>=60?'green':posNum>=40?'yellow':'red';
+  h+=`<div class="summary">
+    <div class="sum-card"><div class="val ${sc(ts)}">${d.position}</div><div class="lbl">建议仓位</div></div>
+    <div class="sum-card"><div class="val ${posClass}">${d.action}</div><div class="lbl">操作建议</div></div>
+    <div class="sum-card"><div class="val">${d.confidenceLevel}</div><div class="lbl">信心等级</div></div>
+    <div class="sum-card"><div class="val ${d.minScore<4?'red':''}">${d.minScore||0}</div><div class="lbl">最低维度分</div></div>
+  </div>`;
+
+  const g=posNum>=60?'linear-gradient(90deg,#00d9a5,#00f5b8)':posNum>=40?'linear-gradient(90deg,#f0b429,#f5d060)':'linear-gradient(90deg,#e94560,#ff6b6b)';
+  h+=`<div class="pos-wrap"><h3>📊 仓位建议（原则14：10分满仓 / 9分重仓 / 8分稳仓 / 8分以下不买）</h3>
+    <div class="pos-bar"><div class="pos-fill" style="width:${posNum}%;background:${g}">${d.position}</div></div>
+    <div class="pos-detail">
+      <div class="row"><span class="k">买入区间</span><span class="v">${d.buySuggest||'-'}</span></div>
+      <div class="row"><span class="k">止损位</span><span class="v" style="color:var(--accent)">${d.stopLoss||'-'}</span></div>
+      <div class="row"><span class="k">目标位</span><span class="v" style="color:var(--green)">${d.targetPrice||'-'}</span></div>
+      <div class="row"><span class="k">最弱维度</span><span class="v" style="color:var(--yellow)">${d.minDim||'-'}</span></div>
+    </div></div>`;
+
+  const keys=Object.keys(DIM);
+  keys.forEach((k,i)=>{
+    const dim=DIM[k], score=d.scores[k]||0, cls=sc(score);
+    const checks=d.checks[k]||{}, details=d.details[k]||[];
+    h+=`<div class="dim-card">
+      <div class="dim-hd" onclick="toggle(this)">
+        <div class="icon ${cls}">${dim.icon}</div>
+        <div class="info"><div class="title">${dim.name}</div><div class="principle">${dim.p}</div></div>
+        <div class="score ${cls}">${score}</div>
+        <div class="arrow">▼</div>
+      </div>
+      <div class="dim-bd"><div class="check-grid">`;
+    for(let ck in checks){
+      h+=`<div class="check-item ${checks[ck]?'pass':'fail'}">
+        <span class="ci-icon">${checks[ck]?'✅':'❌'}</span><span class="ci-text">${ck}</span></div>`;
+    }
+    h+=`</div><div class="detail-list">`;
+    details.forEach(dt=>{h+=`<div class="detail-item">${dt}</div>`});
+    h+=`</div></div></div>`;
+  });
+
+  if(ts>=8) h+=`<div class="alert alert-good">✅ <b>高确定性机会</b> — 原则14：10分满仓，9分重仓，8分稳仓。原则20：迎着子弹上！</div>`;
+  else if(ts>=6) h+=`<div class="alert alert-warn">⚠️ <b>中等确定性</b> — 原则14：8分以下不重仓。原则5：耐得住寂寞。原则6：舍弃不属于自己的机会。</div>`;
+  else h+=`<div class="alert alert-bad">❌ <b>低确定性，不建议买入！</b> — 原则14：8分以下不买！原则3：不做无逻辑交易。原则25：根除盲目随意急躁恐惧！</div>`;
+
+  $('result').innerHTML=h;
+  $('result').style.display='block';
+  
+  const scoreEntries=keys.map(k=>[k,d.scores[k]||0]);
+  scoreEntries.sort((a,b)=>a[1]-b[1]);
+  const worstIdx=keys.indexOf(scoreEntries[0][0]);
+  const bestIdx=keys.indexOf(scoreEntries[scoreEntries.length-1][0]);
+  const headers=document.querySelectorAll('.dim-hd');
+  if(headers[worstIdx])headers[worstIdx].click();
+  if(headers[bestIdx]&&bestIdx!==worstIdx)headers[bestIdx].click();
+  $('result').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function toggle(el){
+  const bd=el.nextElementSibling;
+  const arrow=el.querySelector('.arrow');
+  bd.classList.toggle('show');
+  arrow.style.transform=bd.classList.contains('show')?'rotate(180deg)':'';
+}
+</script>
+</body>
+</html>
