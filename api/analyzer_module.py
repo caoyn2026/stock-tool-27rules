@@ -208,6 +208,10 @@ class AutoScorer:
         self._score_risk_reward()
         self._score_confidence()
         self._calc_position()
+        # DEBUG: 版本标记，确认新代码是否在Vercel上运行
+        self.result['_ver'] = 'v2-market'
+        self.result['_kline_len'] = len(self.k) if self.k is not None else -1
+        self.result['_kline_cols'] = list(self.k.columns)[:5] if self.k is not None else []
         try:
             self._add_market_data()
         except Exception as e:
