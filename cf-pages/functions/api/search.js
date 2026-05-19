@@ -1,7 +1,7 @@
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const q = url.searchParams.get('q') || '';
-  const vercelUrl = `https://stock-tool-eight.vercel.app/api/search?q=${encodeURIComponent(q)}`;
+  const vercelUrl = `https://stock-tool-ebon.vercel.app/api/search?q=${encodeURIComponent(q)}`;
   
   try {
     const controller = new AbortController();

@@ -1,7 +1,7 @@
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const code = url.searchParams.get('code') || '';
-  const vercelUrl = `https://stock-tool-eight.vercel.app/api/analyze?code=${encodeURIComponent(code)}`;
+  const vercelUrl = `https://stock-tool-ebon.vercel.app/api/analyze?code=${encodeURIComponent(code)}`;
   
   try {
     const controller = new AbortController();
